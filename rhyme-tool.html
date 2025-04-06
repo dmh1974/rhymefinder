@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rhyme Finder</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .search-container {
+            display: flex;
+            margin-bottom: 20px;
+        }
+        #word-input {
+            flex: 1;
+            padding: 10px;
+            font-size: 16px;
+        }
+        #search-btn {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        #search-btn:hover {
+            background-color: #45a049;
+        }
+        .section {
+            margin-bottom: 30px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 15px;
+        }
+        .section h2 {
+            margin-top: 0;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        .rhyme-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .rhyme-word {
+            padding: 5px 10px;
+            background-color: #f0f0f0;
+            border-radius: 3px;
+            cursor: default;
+            position: relative;
+        }
+        .rhyme-word:hover::after {
+            content: "Syllable Count: " attr(data-syllables);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #333;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 14px;
+            white-space: nowrap;
+            z-index: 1;
+        }
+        .loading {
+            text-align: center;
+            font-style: italic;
+            color: #666;
+        }
+        .error {
+            color: #d9534f;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>Rhyme Finder</h1>
+    
+    <div class="search-container">
+        <input type="text" id="word-input" placeholder="Enter a word to find rhymes...">
+        <button id="search-btn">Find Rhymes</button>
+    </div>
+    
+    <div id="results">
+        <div class="section" id="top-rhymes">
+            <h2>Top Rhymes</h2>
+            <div class="rhyme-list" id="top-rhymes-list"></div>
+        </div>
+        
+        <div class="section" id="near-rhymes">
+            <h2>Near Rhymes</h2>
+            <div class="rhyme-list" id="near-rhymes-list"></div>
+        </div>
+        
+        <div class="section" id="far-rhymes">
+            <h2>Far Rhymes</h2>
+            <div class="rhyme-list" id="far-rhymes-list"></div>
+        </div>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchBtn = document.getElementById('search-btn');
+            const wordInput = document.getElementById('word-input');
+            
+            // Search when button is clicked or Enter is pressed
+            searchBtn.addEventListener('click', searchRhymes);
+            wordInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    searchRhymes();
+                }
+            });
+            
+            function searchRhymes() {
+                const word = wordInput.value.trim();
+                if (!word) {
+                    alert('Please enter a word to search');
+                    return;
+                }
+                
+                // Clear previous results
+                document.getElementById('top-rhymes-list').innerHTML = '<div class="loading">Loading...</div>';
+                document.getElementById('near-rhymes-list').innerHTML = '<div class="loading">Loading...</div>';
+                document.getElementById('far-rhymes-list').innerHTML = '<div class="loading">Loading...</div>';
+                
+                // Fetch all rhymes at once and then filter them
+                fetch(`https://rhymebrain.com/talk?function=getRhymes&word=${encodeURIComponent(word)}`)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        // Filter the rhymes by score
+                        const topRhymes = data.filter(r => r.score === 300);
+                        const nearRhymes = data.filter(r => r.score === 264);
+                        const farRhymes = data.filter(r => r.score === 192);
+                        
+                        displayRhymes(topRhymes, 'top-rhymes-list');
+                        displayRhymes(nearRhymes, 'near-rhymes-list');
+                        displayRhymes(farRhymes, 'far-rhymes-list');
+                    })
+                    .catch(error => {
+                        console.error('Error fetching rhymes:', error);
+                        document.getElementById('top-rhymes-list').innerHTML = 
+                            `<div class="error">Failed to load rhymes. Please try again.</div>`;
+                        document.getElementById('near-rhymes-list').innerHTML = '';
+                        document.getElementById('far-rhymes-list').innerHTML = '';
+                    });
+            }
+            
+            function displayRhymes(rhymes, elementId) {
+                const rhymeList = document.getElementById(elementId);
+                
+                if (!rhymes || rhymes.length === 0) {
+                    rhymeList.innerHTML = '<div>No rhymes found in this category.</div>';
+                    return;
+                }
+                
+                // Sort rhymes by frequency (descending)
+                rhymes.sort((a, b) => b.freq - a.freq);
+                
+                // Clear loading message
+                rhymeList.innerHTML = '';
+                
+                // Add each rhyme word to the list
+                rhymes.forEach(rhyme => {
+                    const wordElement = document.createElement('div');
+                    wordElement.className = 'rhyme-word';
+                    wordElement.textContent = rhyme.word;
+                    wordElement.dataset.syllables = rhyme.syllables;
+                    rhymeList.appendChild(wordElement);
+                });
+            }
+        });
+    </script>
+</body>
+</html>
