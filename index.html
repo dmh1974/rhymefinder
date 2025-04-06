@@ -7,15 +7,21 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            max-width: 800px;
-            margin: 0 auto;
+            margin: 0;
             padding: 20px;
-            line-height: 1.6;
-            background: white;
+            background-color: #f4f4f4
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
         }
         h1 {
-            color: #333;
+            font-size: 24px;
             text-align: center;
+            margin-bottom: 20px;
         }
         .search-container {
             display: flex;
@@ -78,6 +84,7 @@
     </style>
 </head>
 <body>
+<div class="container">
     <h1>Rhyme Finder</h1>
     
     <div class="search-container">
@@ -101,7 +108,7 @@
             <div id="far-rhymes-syllables"></div>
         </div>
     </div>
-    
+</div>    
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const searchBtn = document.getElementById('search-btn');
